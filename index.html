@@ -1,0 +1,1643 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HemoCare — Daily Iron & Vitality Companion</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Outfit (Geometric Editorial) & Plus Jakarta Sans (Clean UI) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        display: ['"Outfit"', 'sans-serif'],
+                    },
+                    colors: {
+                        alabaster: '#FAF8F7',
+                        sand: '#EFEAE8',
+                        crimson: {
+                            50: '#FDF3F4',
+                            100: '#FCE4E7',
+                            200: '#F9CDD3',
+                            400: '#EC7C8A',
+                            500: '#E05A69',
+                            600: '#C83E4D',
+                            700: '#A72F3D',
+                            900: '#5D1B23',
+                        },
+                        sage: {
+                            50: '#F2F8F6',
+                            100: '#DFEFEA',
+                            200: '#C0DFD6',
+                            500: '#3D9681',
+                            600: '#2E7D6B',
+                            700: '#246355',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #FAF8F7;
+            color: #1F2421;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .font-display {
+            font-family: 'Outfit', sans-serif;
+        }
+        .bento-card {
+            background: #FFFFFF;
+            border: 1px solid #EFEAE8;
+            box-shadow: 0 2px 12px -4px rgba(31, 36, 33, 0.04);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .bento-card:hover {
+            box-shadow: 0 8px 24px -6px rgba(200, 62, 77, 0.07);
+        }
+        .tab-content {
+            animation: fadeSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* SVG Circular Progress Smooth Transition */
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        /* Confetti particle animation */
+        @keyframes confettiPop {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(0); opacity: 0; }
+        }
+        .confetti-dot {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            border-radius: 99px;
+            pointer-events: none;
+            z-index: 60;
+            animation: confettiPop 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #FAF8F7;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #DCD5D2;
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between pb-24 md:pb-10 selection:bg-crimson-100 selection:text-crimson-900">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+    <!-- Modal Pengingat Aktif (In-App Alarm) -->
+    <div id="reminder-modal" class="fixed inset-0 bg-stone-900/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-7 shadow-2xl border border-sand text-center transform transition-all">
+            <div class="w-16 h-16 bg-crimson-50 text-crimson-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-bounce border border-crimson-100">
+                <i data-lucide="bell-ring" class="w-8 h-8"></i>
+            </div>
+            <span class="text-xs font-bold uppercase tracking-widest text-crimson-600">HemoCare Reminder</span>
+            <h3 class="font-display text-2xl font-bold text-stone-800 mt-1 mb-2">Waktunya Minum TTD! 💊</h3>
+            <p class="text-stone-600 text-sm mb-6 leading-relaxed">
+                Jangan lupa minum 1 Tablet Tambah Darah hari ini setelah makan. Gunakan air putih atau jus kaya Vitamin C agar penyerapan zat besi maksimal.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button onclick="quickLogFromReminder()" class="flex-1 bg-crimson-600 hover:bg-crimson-700 text-white font-semibold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-sm">
+                    <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                    Catat Sudah Minum
+                </button>
+                <button onclick="closeReminderModal()" class="py-3 px-4 rounded-xl border border-sand text-stone-600 hover:bg-alabaster font-medium text-sm transition">
+                    Nanti Saja
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi (Hapus / Reset Data) -->
+    <div id="confirm-modal" class="fixed inset-0 bg-stone-900/40 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-xl border border-sand">
+            <div class="flex items-center gap-3 text-crimson-600 mb-3">
+                <div class="p-2.5 bg-crimson-50 rounded-xl border border-crimson-100">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                </div>
+                <h3 id="confirm-modal-title" class="font-display font-bold text-lg text-stone-800">Konfirmasi</h3>
+            </div>
+            <p id="confirm-modal-desc" class="text-sm text-stone-600 mb-6 leading-relaxed">Apakah Anda yakin ingin melanjutkan tindakan ini?</p>
+            <div class="flex justify-end gap-2">
+                <button onclick="closeConfirmModal()" class="px-4 py-2.5 rounded-xl text-sm font-medium text-stone-600 hover:bg-alabaster transition">Batal</button>
+                <button id="confirm-modal-action-btn" class="px-4 py-2.5 rounded-xl text-sm font-semibold bg-crimson-600 hover:bg-crimson-700 text-white transition">Ya, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header & Navigasi Atas -->
+    <header class="bg-alabaster/85 backdrop-blur-md border-b border-sand sticky top-0 z-30">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 h-18 py-3 flex items-center justify-between">
+            <!-- Brand Logo: HemoCare -->
+            <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('dashboard')">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-crimson-500 to-crimson-700 flex items-center justify-center text-white shadow-sm">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+                        <path d="M12 11v4"/>
+                        <path d="M10 13h4"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="flex items-center gap-1.5">
+                        <h1 class="font-display font-bold text-xl tracking-tight text-stone-900 leading-none">HemoCare</h1>
+                        <span class="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-crimson-50 text-crimson-600 border border-crimson-100">TTD</span>
+                    </div>
+                    <p class="text-[11px] text-stone-500 font-medium mt-0.5">Daily Iron & Vitality Companion</p>
+                </div>
+            </div>
+
+            <!-- Desktop Navigation Pills -->
+            <nav class="hidden md:flex items-center gap-1.5 bg-white p-1.5 rounded-2xl border border-sand shadow-2xs">
+                <button onclick="switchTab('dashboard')" id="nav-desktop-dashboard" class="nav-btn-desktop px-4 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-2 bg-crimson-600 text-white shadow-xs">
+                    <i data-lucide="layout-grid" class="w-4 h-4"></i>
+                    Dashboard
+                </button>
+                <button onclick="switchTab('reminder')" id="nav-desktop-reminder" class="nav-btn-desktop px-4 py-2 rounded-xl text-sm font-medium text-stone-600 hover:text-stone-900 hover:bg-alabaster transition flex items-center gap-2">
+                    <i data-lucide="bell" class="w-4 h-4"></i>
+                    Pengingat
+                    <span id="reminder-badge-desktop" class="w-2 h-2 rounded-full bg-sage-500 hidden"></span>
+                </button>
+                <button onclick="switchTab('education')" id="nav-desktop-education" class="nav-btn-desktop px-4 py-2 rounded-xl text-sm font-medium text-stone-600 hover:text-stone-900 hover:bg-alabaster transition flex items-center gap-2">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                    Edukasi Anemia
+                </button>
+            </nav>
+
+            <!-- Tanggal Hari Ini -->
+            <div class="hidden sm:flex items-center gap-2 text-xs font-medium text-stone-600 bg-white border border-sand px-3.5 py-2 rounded-full">
+                <i data-lucide="calendar" class="w-3.5 h-3.5 text-crimson-500"></i>
+                <span id="header-date"></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Konten Utama -->
+    <main class="max-w-5xl w-full mx-auto px-4 sm:px-6 pt-6 flex-1">
+
+        <!-- ========================================================= -->
+        <!-- TAB 1: BENTO DASHBOARD INTERAKTIF                         -->
+        <!-- ========================================================= -->
+        <section id="tab-dashboard" class="tab-content space-y-5">
+            
+            <!-- BARIS 1: HERO GREETING & QUICK ACTION CARD (BENTO TOP) -->
+            <div class="bento-card rounded-3xl p-6 sm:p-8 relative overflow-hidden">
+                <!-- Aksen Latar Geometris Lembut -->
+                <div class="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-gradient-to-br from-crimson-50 to-orange-50/60 pointer-events-none"></div>
+                <div class="absolute right-24 -bottom-20 w-44 h-44 rounded-full bg-sage-50/70 pointer-events-none"></div>
+
+                <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <!-- Kiri: Sapaan Dinamis & Status -->
+                    <div class="space-y-3.5 max-w-xl">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span id="dynamic-greeting-pill" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-alabaster text-stone-700 border border-sand">
+                                ☀️ Selamat Pagi
+                            </span>
+                            <span id="hero-status-pill" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/70">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                Belum Dicatat Hari Ini
+                            </span>
+                        </div>
+
+                        <h2 id="hero-headline" class="font-display text-2xl sm:text-3xl lg:text-[32px] font-bold text-stone-900 leading-tight tracking-tight">
+                            Jaga Kadar Hemoglobin & Energi Tubuhmu Hari Ini
+                        </h2>
+                        <p id="hero-subtext" class="text-sm text-stone-600 leading-relaxed">
+                            Satu langkah kecil minum Tablet Tambah Darah membantu mencegah anemia 5L (Lemah, Letih, Lesu, Lelah, Lalai) agar tetap fokus dan bertenaga.
+                        </p>
+
+                        <!-- Pemilih Profil Target -->
+                        <div class="pt-1">
+                            <span class="block text-[11px] font-semibold uppercase tracking-wider text-stone-400 mb-2">Profil Program TTD Anda:</span>
+                            <div class="inline-flex flex-wrap bg-alabaster p-1 rounded-2xl border border-sand gap-1">
+                                <button onclick="setTargetMode('weekly')" id="mode-weekly" class="px-3.5 py-2 rounded-xl text-xs font-semibold transition bg-white text-stone-900 shadow-2xs border border-sand/60">
+                                    Remaja Putri / WUS (1x Seminggu)
+                                </button>
+                                <button onclick="setTargetMode('daily')" id="mode-daily" class="px-3.5 py-2 rounded-xl text-xs font-medium text-stone-500 hover:text-stone-800 transition">
+                                    Ibu Hamil (1x Sehari)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kanan: Kotak Aksi Cepat Catat Minum TTD -->
+                    <div class="lg:w-80 shrink-0 bg-alabaster/90 backdrop-blur-xs p-5 rounded-2xl border border-sand space-y-3.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-stone-800">Pencatatan Cepat</span>
+                            <span class="text-[11px] font-medium text-crimson-600 bg-crimson-50 px-2 py-0.5 rounded-md">1 Tablet</span>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label for="log-date" class="block text-[11px] font-medium text-stone-500 mb-1">Tanggal</label>
+                                <input type="date" id="log-date" class="w-full px-2.5 py-2 text-xs font-medium bg-white border border-sand rounded-xl focus:outline-none focus:border-crimson-500 text-stone-700">
+                            </div>
+                            <div>
+                                <label for="log-time" class="block text-[11px] font-medium text-stone-500 mb-1">Jam Minum</label>
+                                <input type="time" id="log-time" class="w-full px-2.5 py-2 text-xs font-medium bg-white border border-sand rounded-xl focus:outline-none focus:border-crimson-500 text-stone-700">
+                            </div>
+                        </div>
+
+                        <div>
+                            <input type="text" id="log-note" placeholder="Catatan (misal: setelah makan malam)" 
+                                class="w-full px-3 py-2 text-xs bg-white border border-sand rounded-xl focus:outline-none focus:border-crimson-500 text-stone-700 placeholder:text-stone-400">
+                        </div>
+
+                        <button onclick="handleLogTTD(event)" id="btn-log-ttd" 
+                            class="w-full py-3.5 px-4 bg-crimson-600 hover:bg-crimson-700 active:scale-[0.98] text-white font-semibold text-sm rounded-xl shadow-sm transition flex items-center justify-center gap-2 cursor-pointer">
+                            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                            <span>Catat Minum TTD Sekarang</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BARIS 2: BENTO METRICS GRID (4 KARTU STATISTIK & VISUALISASI) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4">
+                
+                <!-- Card 1: Circular Progress Ring (Target Bulanan) -->
+                <div class="lg:col-span-4 bento-card rounded-3xl p-5 flex items-center gap-4">
+                    <div class="relative w-24 h-24 shrink-0 flex items-center justify-center">
+                        <svg class="w-24 h-24" viewBox="0 0 100 100">
+                            <!-- Track Circle -->
+                            <circle cx="50" cy="50" r="40" stroke="#EFEAE8" stroke-width="9" fill="transparent" />
+                            <!-- Progress Circle -->
+                            <circle id="progress-ring-circle" class="progress-ring-circle" cx="50" cy="50" r="40" 
+                                stroke="#2E7D6B" stroke-width="9" stroke-linecap="round" fill="transparent"
+                                stroke-dasharray="251.2" stroke-dashoffset="251.2" />
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                            <span id="ring-percent-text" class="font-display font-bold text-xl text-stone-900 leading-none">0%</span>
+                            <span class="text-[10px] font-medium text-stone-400 mt-0.5">Target</span>
+                        </div>
+                    </div>
+                    <div class="min-w-0">
+                        <span class="text-xs font-semibold text-sage-600 bg-sage-50 px-2.5 py-0.5 rounded-full">Bulan Ini</span>
+                        <h3 class="font-display font-bold text-lg text-stone-800 mt-1.5 leading-snug">
+                            <span id="stat-month-count">0</span> dari <span id="stat-month-target">4</span> Tablet
+                        </h3>
+                        <p id="stat-month-desc" class="text-xs text-stone-500 mt-0.5 leading-relaxed">
+                            Target rutin 1x seminggu
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Card 2: Streak & Kepatuhan -->
+                <div class="lg:col-span-3 bento-card rounded-3xl p-5 flex flex-col justify-between relative overflow-hidden">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <span class="text-xs font-medium text-stone-500">Konsistensi Streak</span>
+                            <div class="flex items-baseline gap-1.5 mt-1">
+                                <span id="stat-streak-count" class="font-display font-extrabold text-3xl text-stone-900">0</span>
+                                <span id="stat-streak-unit" class="text-xs font-semibold text-stone-500">minggu</span>
+                            </div>
+                        </div>
+                        <div class="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-100 text-amber-500 flex items-center justify-center shrink-0">
+                            <i data-lucide="flame" class="w-6 h-6 fill-amber-400/30"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-sand/70 flex items-center justify-between text-xs">
+                        <span class="text-stone-500">Status Kepatuhan</span>
+                        <span id="compliance-badge" class="font-bold text-sage-600">Sangat Baik ✨</span>
+                    </div>
+                </div>
+
+                <!-- Card 3: Mini Bar Chart 4 Minggu Terakhir -->
+                <div class="lg:col-span-5 bento-card rounded-3xl p-5 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <h3 class="font-display font-bold text-sm text-stone-800">Aktivitas 4 Minggu Terakhir</h3>
+                            <p class="text-[11px] text-stone-400">Jumlah tablet dikonsumsi per minggu</p>
+                        </div>
+                        <span class="text-[11px] font-semibold text-crimson-600 bg-crimson-50 px-2.5 py-1 rounded-full">Grafik Tren</span>
+                    </div>
+                    
+                    <!-- Container Batang Grafik -->
+                    <div id="four-week-chart" class="grid grid-cols-4 gap-3 items-end h-24 pt-3 px-2">
+                        <!-- Diisi dinamis via JS -->
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- BARIS 3: NEXT REMINDER WIDGET + INTERACTIVE 7-DAY TRACKER -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                
+                <!-- Kolom Kiri (5 cols): Jadwal Pengingat Berikutnya + 7 Hari Terakhir Interaktif -->
+                <div class="lg:col-span-5 space-y-5">
+                    
+                    <!-- Widget Jadwal Pengingat Berikutnya -->
+                    <div class="bento-card rounded-3xl p-5 bg-gradient-to-br from-white to-crimson-50/30">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-xl bg-crimson-100/80 text-crimson-600 flex items-center justify-center">
+                                    <i data-lucide="alarm-clock" class="w-4 h-4"></i>
+                                </div>
+                                <h3 class="font-display font-bold text-sm text-stone-800">Pengingat Berikutnya</h3>
+                            </div>
+                            <!-- Quick Toggle Switch -->
+                            <label class="inline-flex items-center cursor-pointer" title="Aktif/Nonaktifkan Pengingat">
+                                <input type="checkbox" id="dashboard-reminder-toggle" class="sr-only peer" onchange="toggleReminderFromDashboard()">
+                                <div class="relative w-10 h-5.5 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-sage-600"></div>
+                            </label>
+                        </div>
+
+                        <div class="flex items-end justify-between gap-2">
+                            <div>
+                                <p id="next-reminder-schedule" class="font-display font-bold text-lg text-stone-900">Setiap Jumat, 20:00</p>
+                                <p id="next-reminder-countdown" class="text-xs font-medium text-crimson-600 mt-0.5">Menghitung jadwal...</p>
+                            </div>
+                            <button onclick="switchTab('reminder')" class="text-xs font-semibold text-stone-600 hover:text-crimson-600 bg-alabaster hover:bg-crimson-50 px-3 py-2 rounded-xl border border-sand transition">
+                                Atur Jam
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Pelacak Kapsul 7 Hari Terakhir (Klik untuk Toggle Catatan) -->
+                    <div class="bento-card rounded-3xl p-5">
+                        <div class="flex items-center justify-between mb-1">
+                            <h3 class="font-display font-bold text-base text-stone-800">Pelacak 7 Hari Terakhir</h3>
+                            <span class="text-[11px] font-medium text-stone-400">Ketuk tanggal untuk ubah</span>
+                        </div>
+                        <p class="text-xs text-stone-500 mb-4">Tandai hari saat Anda mengonsumsi TTD dengan satu ketukan.</p>
+                        
+                        <div id="weekly-calendar-grid" class="grid grid-cols-7 gap-1.5 text-center">
+                            <!-- Diisi via JS -->
+                        </div>
+
+                        <div class="mt-4 pt-3 border-t border-sand/70 flex items-center justify-between text-[11px] text-stone-500">
+                            <div class="flex items-center gap-1.5">
+                                <span class="w-2.5 h-2.5 rounded-full bg-sage-600 inline-block"></span>
+                                <span>Sudah Minum</span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <span class="w-2.5 h-2.5 rounded-full bg-alabaster border border-stone-300 inline-block"></span>
+                                <span>Belum (Ketuk untuk catat)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Kolom Kanan (7 cols): Riwayat Konsumsi TTD -->
+                <div class="lg:col-span-7 bento-card rounded-3xl p-5 sm:p-6 flex flex-col justify-between">
+                    <div>
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                            <div>
+                                <h3 class="font-display font-bold text-base text-stone-800">Riwayat Konsumsi TTD</h3>
+                                <p class="text-xs text-stone-400">Tersimpan otomatis di perangkat Anda</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span id="total-history-count" class="text-xs font-semibold text-stone-600 bg-alabaster border border-sand px-3 py-1 rounded-full">0 catatan</span>
+                                <button onclick="promptResetDemoData()" title="Reset ke data contoh atau kosongkan" class="text-xs font-medium text-stone-400 hover:text-crimson-600 px-2.5 py-1 rounded-lg hover:bg-crimson-50 transition">
+                                    Kelola Data
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="history-list" class="space-y-2.5 max-h-[310px] overflow-y-auto pr-1">
+                            <!-- Diisi via JS -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- TAB 2: PENGINGAT PINTAR (SMART REMINDER)                  -->
+        <!-- ========================================================= -->
+        <section id="tab-reminder" class="tab-content hidden space-y-6">
+            <div class="bento-card rounded-3xl p-6 sm:p-8">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-sand">
+                    <div class="flex items-start gap-3.5">
+                        <div class="w-12 h-12 rounded-2xl bg-crimson-50 text-crimson-600 border border-crimson-100 flex items-center justify-center shrink-0">
+                            <i data-lucide="bell-ring" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-crimson-600">Smart Schedule</span>
+                            <h2 class="font-display text-xl font-bold text-stone-900">Pengingat Minum TTD Otomatis</h2>
+                            <p class="text-sm text-stone-500 mt-0.5">Sesuaikan jadwal alarm agar rutinitas minum tablet tambah darah tidak pernah terlewat.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Toggle Aktifkan Pengingat -->
+                    <label class="inline-flex items-center cursor-pointer self-start sm:self-center bg-alabaster px-4 py-2.5 rounded-2xl border border-sand">
+                        <input type="checkbox" id="reminder-toggle" class="sr-only peer" onchange="toggleReminderSetting()">
+                        <div class="relative w-11 h-6 bg-stone-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sage-600"></div>
+                        <span id="reminder-status-label" class="ms-3 text-sm font-semibold text-stone-700">Nonaktif</span>
+                    </label>
+                </div>
+
+                <!-- Pengaturan Hari & Jam -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 py-6">
+                    <!-- Pilih Hari (Untuk Mode Mingguan) -->
+                    <div id="reminder-day-container" class="space-y-2">
+                        <label class="block text-sm font-bold text-stone-800">Hari Pengingat (Mode Mingguan)</label>
+                        <p class="text-xs text-stone-500 mb-2">Pilih satu hari rutin setiap minggu (misal: setiap hari Jumat).</p>
+                        <div class="grid grid-cols-4 sm:grid-cols-7 gap-2" id="day-selector">
+                            <button type="button" onclick="selectReminderDay(1)" data-day="1" class="day-btn py-2.5 rounded-xl text-xs font-semibold border border-sand text-stone-600 hover:bg-alabaster transition">Sen</button>
+                            <button type="button" onclick="selectReminderDay(2)" data-day="2" class="day-btn py-2.5 rounded-xl text-xs font-semibold border border-sand text-stone-600 hover:bg-alabaster transition">Sel</button>
+                            <button type="button" onclick="selectReminderDay(3)" data-day="3" class="day-btn py-2.5 rounded-xl text-xs font-semibold border border-sand text-stone-600 hover:bg-alabaster transition">Rab</button>
+                            <button type="button" onclick="selectReminderDay(4)" data-day="4" class="day-btn py-2.5 rounded-xl text-xs font-semibold border border-sand text-stone-600 hover:bg-alabaster transition">Kam</button>
+                            <button type="button" onclick="selectReminderDay(5)" data-day="5" class="day-btn py-2.5 rounded-xl text-xs font-semibold border border-sand text-stone-600 hover:bg-alabaster transition">Jum</button>
+                            <button type="button" onclick="selectReminderDay(6)" data-day="6" class="day-btn py-2.5 rounded-xl text-xs font-semibold border border-sand text-stone-600 hover:bg-alabaster transition">Sab</button>
+                            <button type="button" onclick="selectReminderDay(0)" data-day="0" class="day-btn py-2.5 rounded-xl text-xs font-semibold border border-sand text-stone-600 hover:bg-alabaster transition">Min</button>
+                        </div>
+                    </div>
+
+                    <!-- Pilih Jam -->
+                    <div class="space-y-2">
+                        <label for="reminder-time-input" class="block text-sm font-bold text-stone-800">Jam Pengingat</label>
+                        <p class="text-xs text-stone-500 mb-2">Disarankan malam hari setelah makan sebelum tidur untuk mencegah mual.</p>
+                        <div class="flex items-center gap-3">
+                            <input type="time" id="reminder-time-input" value="20:00" onchange="saveReminderSettings()"
+                                class="px-4 py-2.5 text-base font-display font-bold bg-alabaster border border-sand rounded-xl focus:outline-none focus:border-crimson-500 text-stone-900">
+                            <button onclick="saveReminderSettings(true)" class="px-5 py-2.5 bg-stone-900 hover:bg-stone-800 text-white text-sm font-semibold rounded-xl transition">
+                                Simpan Jadwal
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Izin Notifikasi Browser & Tombol Uji Coba -->
+                <div class="bg-alabaster rounded-2xl p-4 sm:p-5 border border-sand flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-bold text-stone-800">Notifikasi Browser & Alarm Suara</span>
+                            <span id="notif-permission-badge" class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-stone-200 text-stone-700">Mengecek...</span>
+                        </div>
+                        <p class="text-xs text-stone-500">Uji coba suara chime lembut dan pop-up pengingat di bawah ini.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                        <button onclick="requestNotificationPermission()" id="btn-req-notif" class="flex-1 sm:flex-initial px-3.5 py-2.5 bg-white hover:bg-stone-50 text-stone-700 border border-sand text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1.5">
+                            <i data-lucide="shield-check" class="w-4 h-4 text-sage-600"></i>
+                            Izinkan Notifikasi
+                        </button>
+                        <button onclick="testReminderAlert()" class="flex-1 sm:flex-initial px-4 py-2.5 bg-crimson-600 hover:bg-crimson-700 text-white text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1.5 shadow-2xs">
+                            <i data-lucide="volume-2" class="w-4 h-4"></i>
+                            Tes Bunyi & Pengingat
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panduan Kombinasi Makanan (Booster vs Penghambat Zat Besi) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="bento-card rounded-3xl p-6 border-sage-200/80 bg-gradient-to-br from-white to-sage-50/40">
+                    <div class="flex items-center gap-2.5 text-sage-700 mb-3">
+                        <div class="p-2 rounded-xl bg-sage-100 text-sage-700">
+                            <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                        </div>
+                        <h3 class="font-display font-bold text-base">Pendamping Terbaik (Booster Penyerapan)</h3>
+                    </div>
+                    <ul class="space-y-2.5 text-xs sm:text-sm text-stone-600 leading-relaxed">
+                        <li class="flex items-start gap-2">
+                            <span class="text-sage-600 font-bold">✓</span>
+                            <span><strong>Air Putih Matang:</strong> Pilihan paling aman dan netral untuk menelan TTD.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-sage-600 font-bold">✓</span>
+                            <span><strong>Buah Tinggi Vitamin C:</strong> Jus jeruk murni, jambu biji, stroberi, atau pepaya meningkatkan penyerapan zat besi hingga 2x lipat.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-sage-600 font-bold">✓</span>
+                            <span><strong>Waktu Malam Sebelum Tidur:</strong> Mengurangi rasa mual atau aroma logam pada lambung.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bento-card rounded-3xl p-6 border-crimson-100 bg-gradient-to-br from-white to-crimson-50/30">
+                    <div class="flex items-center gap-2.5 text-crimson-700 mb-3">
+                        <div class="p-2 rounded-xl bg-crimson-100 text-crimson-700">
+                            <i data-lucide="x-circle" class="w-5 h-5"></i>
+                        </div>
+                        <h3 class="font-display font-bold text-base">Hindari Bersamaan (Penghambat Zat Besi)</h3>
+                    </div>
+                    <ul class="space-y-2.5 text-xs sm:text-sm text-stone-600 leading-relaxed">
+                        <li class="flex items-start gap-2">
+                            <span class="text-crimson-600 font-bold">✕</span>
+                            <span><strong>Teh & Kopi:</strong> Mengandung zat <em>tanin</em> dan <em>polifenol</em> yang mengikat zat besi sehingga terbuang percuma.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-crimson-600 font-bold">✕</span>
+                            <span><strong>Susu & Suplemen Kalsium:</strong> Kalsium bersaing dengan zat besi saat diserap usus.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-crimson-600 font-bold">✕</span>
+                            <span><strong>Obat Maag (Antasida):</strong> Beri jeda minimal <strong>1–2 jam</strong> sebelum atau sesudah minum TTD.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- TAB 3: EDUKASI ANEMIA INTERAKTIF (ANEMIA ACADEMY)         -->
+        <!-- ========================================================= -->
+        <section id="tab-education" class="tab-content hidden space-y-6">
+            
+            <!-- Banner Header Edukasi dengan Ilustrasi SVG Sel Darah Merah -->
+            <div class="bg-gradient-to-r from-crimson-700 via-crimson-600 to-crimson-500 rounded-3xl p-6 sm:p-8 text-white shadow-sm relative overflow-hidden">
+                <div class="relative z-10 max-w-2xl space-y-2">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-white/15 backdrop-blur-xs rounded-full text-xs font-semibold">
+                        <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
+                        HemoCare Academy
+                    </span>
+                    <h2 class="font-display text-2xl sm:text-3xl font-bold tracking-tight">Memahami Anemia & Kesehatan Darah</h2>
+                    <p class="text-crimson-100 text-sm leading-relaxed">
+                        Pelajari pengertian anemia, kenali tanda 5L melalui fitur pengecekan mandiri, serta langkah tepat pencegahan dan penanganannya.
+                    </p>
+                </div>
+
+                <!-- Ilustrasi SVG Sel Darah Merah Artistik -->
+                <svg class="w-44 h-44 absolute -right-4 -bottom-6 text-white/15 pointer-events-none" viewBox="0 0 200 200" fill="none">
+                    <circle cx="110" cy="110" r="65" fill="currentColor"/>
+                    <circle cx="110" cy="110" r="32" fill="#A72F3D" fill-opacity="0.45"/>
+                    <circle cx="45" cy="65" r="28" fill="currentColor"/>
+                    <circle cx="45" cy="65" r="13" fill="#A72F3D" fill-opacity="0.45"/>
+                    <circle cx="155" cy="40" r="20" fill="currentColor"/>
+                </svg>
+            </div>
+
+            <!-- BAGIAN 1: PENGERTIAN ANEMIA & PERAN HEMOGLOBIN -->
+            <div class="bento-card rounded-3xl p-6 sm:p-7 space-y-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-2xl bg-crimson-50 text-crimson-600 border border-crimson-100 flex items-center justify-center shrink-0">
+                        <i data-lucide="droplets" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-crimson-600">01 • Dasar Kesehatan</span>
+                        <h3 class="font-display font-bold text-xl text-stone-900">Pengertian Anemia & Peran Hemoglobin</h3>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                    <div class="lg:col-span-7 space-y-3 text-sm text-stone-600 leading-relaxed">
+                        <p>
+                            <strong class="text-stone-900">Anemia</strong> adalah kondisi medis ketika jumlah sel darah merah sehat atau kadar <strong class="text-stone-900">Hemoglobin (Hb)</strong> di dalam darah berada di bawah batas normal (umumnya &lt; 12 g/dL pada wanita tidak hamil dan &lt; 11 g/dL pada ibu hamil).
+                        </p>
+                        <p>
+                            <strong class="text-stone-900">Hemoglobin</strong> adalah protein kaya zat besi di dalam sel darah merah yang bertugas mengikat dan mengantarkan <strong>oksigen dari paru-paru ke seluruh jaringan tubuh</strong>—termasuk otak, jantung, dan otot. Tanpa zat besi yang cukup, produksi hemoglobin terhambat sehingga tubuh kekurangan energi.
+                        </p>
+                    </div>
+
+                    <!-- Visualisasi Perbandingan Sel Darah Sehat vs Anemia (SVG) -->
+                    <div class="lg:col-span-5 bg-alabaster rounded-2xl p-4 border border-sand space-y-3">
+                        <span class="text-xs font-bold text-stone-700 block text-center">Ilustrasi Kepadatan Sel Darah Merah</span>
+                        <div class="grid grid-cols-2 gap-3 text-center">
+                            <div class="bg-white p-3 rounded-xl border border-sage-200">
+                                <svg class="w-16 h-12 mx-auto mb-1.5" viewBox="0 0 80 50">
+                                    <circle cx="20" cy="18" r="9" fill="#C83E4D"/><circle cx="20" cy="18" r="4" fill="#E05A69"/>
+                                    <circle cx="45" cy="14" r="9" fill="#C83E4D"/><circle cx="45" cy="14" r="4" fill="#E05A69"/>
+                                    <circle cx="62" cy="30" r="9" fill="#C83E4D"/><circle cx="62" cy="30" r="4" fill="#E05A69"/>
+                                    <circle cx="32" cy="35" r="9" fill="#C83E4D"/><circle cx="32" cy="35" r="4" fill="#E05A69"/>
+                                </svg>
+                                <span class="text-xs font-bold text-sage-700 block">Hb Normal</span>
+                                <span class="text-[10px] text-stone-500">Oksigen optimal ke otak & otot</span>
+                            </div>
+                            <div class="bg-white p-3 rounded-xl border border-amber-200">
+                                <svg class="w-16 h-12 mx-auto mb-1.5" viewBox="0 0 80 50">
+                                    <circle cx="24" cy="22" r="8" fill="#EC7C8A" fill-opacity="0.65"/><circle cx="24" cy="22" r="3.5" fill="#F9CDD3"/>
+                                    <circle cx="56" cy="30" r="8" fill="#EC7C8A" fill-opacity="0.65"/><circle cx="56" cy="30" r="3.5" fill="#F9CDD3"/>
+                                </svg>
+                                <span class="text-xs font-bold text-amber-700 block">Anemia (Hb Rendah)</span>
+                                <span class="text-[10px] text-stone-500">Pasokan oksigen berkurang</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BAGIAN 2: GEJALA ANEMIA (5L) + SELF-CHECK INTERAKTIF -->
+            <div class="bento-card rounded-3xl p-6 sm:p-7 space-y-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center shrink-0">
+                            <i data-lucide="activity" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-amber-600">02 • Deteksi Dini</span>
+                            <h3 class="font-display font-bold text-xl text-stone-900">Gejala Anemia (5L) & Cek Mandiri</h3>
+                        </div>
+                    </div>
+                    <span class="text-xs font-medium text-stone-500 bg-alabaster px-3 py-1 rounded-full border border-sand self-start sm:self-center">
+                        Centang gejala yang Anda rasakan
+                    </span>
+                </div>
+
+                <!-- Kartu 5L -->
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                    <div class="bg-amber-50/60 border border-amber-200/70 p-3.5 rounded-2xl text-center">
+                        <span class="font-display font-extrabold text-lg text-amber-800 block">Lemah</span>
+                        <span class="text-[11px] text-amber-900/75">Tenaga cepat habis</span>
+                    </div>
+                    <div class="bg-amber-50/60 border border-amber-200/70 p-3.5 rounded-2xl text-center">
+                        <span class="font-display font-extrabold text-lg text-amber-800 block">Letih</span>
+                        <span class="text-[11px] text-amber-900/75">Tubuh terasa berat</span>
+                    </div>
+                    <div class="bg-amber-50/60 border border-amber-200/70 p-3.5 rounded-2xl text-center">
+                        <span class="font-display font-extrabold text-lg text-amber-800 block">Lesu</span>
+                        <span class="text-[11px] text-amber-900/75">Kurang bersemangat</span>
+                    </div>
+                    <div class="bg-amber-50/60 border border-amber-200/70 p-3.5 rounded-2xl text-center">
+                        <span class="font-display font-extrabold text-lg text-amber-800 block">Lelah</span>
+                        <span class="text-[11px] text-amber-900/75">Cepat capek beraktivitas</span>
+                    </div>
+                    <div class="col-span-2 sm:col-span-1 bg-amber-50/60 border border-amber-200/70 p-3.5 rounded-2xl text-center">
+                        <span class="font-display font-extrabold text-lg text-amber-800 block">Lalai</span>
+                        <span class="text-[11px] text-amber-900/75">Sulit fokus & pelupa</span>
+                    </div>
+                </div>
+
+                <!-- Self-Check Gejala Interaktif -->
+                <div class="bg-alabaster rounded-2xl p-5 border border-sand space-y-4">
+                    <h4 class="font-display font-bold text-sm text-stone-800">Self-Check Gejala Ringan (Pilih yang sering dialami akhir-akhir ini):</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5" id="symptom-checklist">
+                        <label class="flex items-center gap-3 p-3 bg-white rounded-xl border border-sand cursor-pointer hover:border-crimson-300 transition">
+                            <input type="checkbox" onchange="evaluateSymptoms()" class="symptom-cb w-4 h-4 accent-crimson-600 rounded">
+                            <span class="text-xs sm:text-sm text-stone-700">Sering merasa 5L (lemah, letih, lesu)</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-3 bg-white rounded-xl border border-sand cursor-pointer hover:border-crimson-300 transition">
+                            <input type="checkbox" onchange="evaluateSymptoms()" class="symptom-cb w-4 h-4 accent-crimson-600 rounded">
+                            <span class="text-xs sm:text-sm text-stone-700">Pusing atau mata berkunang saat berdiri</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-3 bg-white rounded-xl border border-sand cursor-pointer hover:border-crimson-300 transition">
+                            <input type="checkbox" onchange="evaluateSymptoms()" class="symptom-cb w-4 h-4 accent-crimson-600 rounded">
+                            <span class="text-xs sm:text-sm text-stone-700">Kelopak mata bagian dalam, bibir, atau wajah pucat</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-3 bg-white rounded-xl border border-sand cursor-pointer hover:border-crimson-300 transition">
+                            <input type="checkbox" onchange="evaluateSymptoms()" class="symptom-cb w-4 h-4 accent-crimson-600 rounded">
+                            <span class="text-xs sm:text-sm text-stone-700">Sulit konsentrasi saat belajar / bekerja</span>
+                        </label>
+                    </div>
+
+                    <!-- Hasil Evaluasi Self-Check -->
+                    <div id="symptom-result-box" class="p-4 rounded-xl bg-white border border-sand text-xs sm:text-sm text-stone-600 leading-relaxed">
+                        Pilih salah satu atau beberapa gejala di atas untuk melihat rekomendasi kesehatan Anda.
+                    </div>
+                </div>
+            </div>
+
+            <!-- BAGIAN 3: PENANGANAN & PENCEGAHAN ANEMIA -->
+            <div class="bento-card rounded-3xl p-6 sm:p-7 space-y-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-2xl bg-sage-50 text-sage-600 border border-sage-100 flex items-center justify-center shrink-0">
+                        <i data-lucide="shield-plus" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-sage-600">03 • Solusi & Pencegahan</span>
+                        <h3 class="font-display font-bold text-xl text-stone-900">Langkah Penanganan & Nutrisi Kaya Zat Besi</h3>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="p-5 rounded-2xl bg-alabaster border border-sand space-y-2">
+                        <div class="w-9 h-9 rounded-xl bg-crimson-100 text-crimson-700 flex items-center justify-center font-display font-bold text-sm">1</div>
+                        <h4 class="font-display font-bold text-base text-stone-900">Suplementasi TTD Rutin</h4>
+                        <p class="text-xs text-stone-600 leading-relaxed">
+                            <strong>Remaja Putri / WUS:</strong> 1 tablet setiap minggu sepanjang tahun.<br>
+                            <strong>Ibu Hamil:</strong> 1 tablet setiap hari selama kehamilan (minimal 90 tablet).
+                        </p>
+                    </div>
+
+                    <div class="p-5 rounded-2xl bg-alabaster border border-sand space-y-2">
+                        <div class="w-9 h-9 rounded-xl bg-sage-100 text-sage-700 flex items-center justify-center font-display font-bold text-sm">2</div>
+                        <h4 class="font-display font-bold text-base text-stone-900">Pola Makan Tinggi Zat Besi</h4>
+                        <p class="text-xs text-stone-600 leading-relaxed">
+                            Utamakan protein hewani (<strong>hati ayam/sapi, daging merah, ikan, telur</strong>) karena zat besi <em>heme</em> jauh lebih mudah diserap tubuh dibanding sumber nabati (bayam, kelor, kacang-kacangan).
+                        </p>
+                    </div>
+
+                    <div class="p-5 rounded-2xl bg-alabaster border border-sand space-y-2">
+                        <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-display font-bold text-sm">3</div>
+                        <h4 class="font-display font-bold text-base text-stone-900">Cek Kadar Hb Berkala</h4>
+                        <p class="text-xs text-stone-600 leading-relaxed">
+                            Lakukan pemeriksaan Hemoglobin (Hb) di Puskesmas atau fasilitas kesehatan terdekat, terutama jika gejala 5L menetap atau sebelum merencanakan kehamilan.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer Minimalis -->
+    <footer class="max-w-5xl w-full mx-auto px-4 sm:px-6 mt-12 pt-6 border-t border-sand flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-stone-400">
+        <p><strong class="text-stone-600 font-display">HemoCare</strong> — Daily Iron & Vitality Companion</p>
+        <p>Data tersimpan secara lokal & privat di browser Anda.</p>
+    </footer>
+
+    <!-- Bottom Navigation Bar (Khusus Mobile) -->
+    <nav class="md:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-sand z-30 px-2 py-2 flex justify-around items-center shadow-lg">
+        <button onclick="switchTab('dashboard')" id="nav-mobile-dashboard" class="nav-btn-mobile flex-1 py-1 flex flex-col items-center gap-1 text-crimson-600 font-semibold">
+            <i data-lucide="layout-grid" class="w-5 h-5"></i>
+            <span class="text-[11px]">Dashboard</span>
+        </button>
+        <button onclick="switchTab('reminder')" id="nav-mobile-reminder" class="nav-btn-mobile flex-1 py-1 flex flex-col items-center gap-1 text-stone-500 font-medium relative">
+            <div class="relative">
+                <i data-lucide="bell" class="w-5 h-5"></i>
+                <span id="reminder-badge-mobile" class="w-2 h-2 rounded-full bg-sage-500 absolute -top-0.5 -right-0.5 hidden"></span>
+            </div>
+            <span class="text-[11px]">Pengingat</span>
+        </button>
+        <button onclick="switchTab('education')" id="nav-mobile-education" class="nav-btn-mobile flex-1 py-1 flex flex-col items-center gap-1 text-stone-500 font-medium">
+            <i data-lucide="sparkles" class="w-5 h-5"></i>
+            <span class="text-[11px]">Edukasi</span>
+        </button>
+    </nav>
+
+    <!-- Script Utama Aplikasi HemoCare -->
+    <script>
+        // ==========================================
+        // 1. STATE & PENYIMPANAN LOKAL (localStorage)
+        // ==========================================
+        const STORAGE_KEYS = {
+            LOGS: 'hemocare_logs_v2',
+            SETTINGS: 'hemocare_settings_v2',
+            INITIALIZED: 'hemocare_initialized_v2'
+        };
+
+        let appState = {
+            logs: [], // Array of { id, date: 'YYYY-MM-DD', time: 'HH:MM', note: '' }
+            settings: {
+                targetMode: 'weekly', // 'weekly' (1x seminggu) atau 'daily' (1x sehari)
+                reminderEnabled: true,
+                reminderDay: 5, // Jumat
+                reminderTime: '20:00',
+                lastNotifiedDate: ''
+            }
+        };
+
+        let confirmActionCallback = null;
+
+        function getOffsetDateStr(daysOffset) {
+            const d = new Date();
+            d.setDate(d.getDate() + daysOffset);
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        // Membuat data contoh realistis untuk pengguna pertama kali agar grafik & dashboard langsung hidup
+        function seedSampleData() {
+            return [
+                { id: 'sample-1', date: getOffsetDateStr(-4), time: '20:15', note: 'Diminum malam hari dengan air putih' },
+                { id: 'sample-2', date: getOffsetDateStr(-11), time: '20:00', note: 'Setelah makan malam & jus jeruk' },
+                { id: 'sample-3', date: getOffsetDateStr(-18), time: '21:00', note: 'Rutin mingguan Jumat sehat' }
+            ];
+        }
+
+        function loadData() {
+            try {
+                const isInitialized = localStorage.getItem(STORAGE_KEYS.INITIALIZED);
+                const savedLogs = localStorage.getItem(STORAGE_KEYS.LOGS);
+                const savedSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+
+                if (!isInitialized) {
+                    appState.logs = seedSampleData();
+                    localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true');
+                    saveLogs();
+                    saveSettings();
+                } else {
+                    if (savedLogs) appState.logs = JSON.parse(savedLogs);
+                    if (savedSettings) appState.settings = { ...appState.settings, ...JSON.parse(savedSettings) };
+                }
+            } catch (error) {
+                console.error('Gagal memuat data:', error);
+            }
+        }
+
+        function saveLogs() {
+            try {
+                localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(appState.logs));
+            } catch (e) {
+                showToast('Gagal menyimpan catatan ke penyimpanan browser.', 'error');
+            }
+        }
+
+        function saveSettings() {
+            try {
+                localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(appState.settings));
+            } catch (e) {
+                console.error('Gagal menyimpan pengaturan:', e);
+            }
+        }
+
+        // ==========================================
+        // 2. HELPER TANGGAL, WAKTU & SAPAAN DINAMIS
+        // ==========================================
+        function getTodayStr() {
+            return getOffsetDateStr(0);
+        }
+
+        function getCurrentTimeStr() {
+            const now = new Date();
+            return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        }
+
+        function formatIndoDate(dateStr) {
+            if (!dateStr) return '';
+            const [y, m, d] = dateStr.split('-').map(Number);
+            const dateObj = new Date(y, m - 1, d);
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+            const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            return `${days[dateObj.getDay()]}, ${d} ${months[m - 1]} ${y}`;
+        }
+
+        function updateDynamicGreeting() {
+            const hour = new Date().getHours();
+            const pill = document.getElementById('dynamic-greeting-pill');
+            if (hour >= 4 && hour < 11) {
+                pill.textContent = '☀️ Selamat Pagi';
+            } else if (hour >= 11 && hour < 15) {
+                pill.textContent = '🌤️ Selamat Siang';
+            } else if (hour >= 15 && hour < 18) {
+                pill.textContent = '🌇 Selamat Sore';
+            } else {
+                pill.textContent = '🌙 Selamat Malam';
+            }
+        }
+
+        // Efek konfeti halus saat mencatat TTD
+        function triggerCelebrationBurst(event) {
+            const colors = ['#C83E4D', '#2E7D6B', '#F59E0B', '#EC7C8A', '#3D9681'];
+            const originX = event && event.clientX ? event.clientX : window.innerWidth / 2;
+            const originY = event && event.clientY ? event.clientY : window.innerHeight / 3;
+
+            for (let i = 0; i < 18; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'confetti-dot';
+                const angle = (Math.PI * 2 * i) / 18;
+                const velocity = 45 + Math.random() * 55;
+                dot.style.left = `${originX}px`;
+                dot.style.top = `${originY}px`;
+                dot.style.backgroundColor = colors[i % colors.length];
+                dot.style.setProperty('--tx', `${Math.cos(angle) * velocity}px`);
+                dot.style.setProperty('--ty', `${Math.sin(angle) * velocity - 20}px`);
+                dot.style.setProperty('--rot', `${Math.random() * 360}deg`);
+                document.body.appendChild(dot);
+                setTimeout(() => dot.remove(), 850);
+            }
+        }
+
+        // ==========================================
+        // 3. NAVIGASI TAB
+        // ==========================================
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            const target = document.getElementById(`tab-${tabName}`);
+            if (target) target.classList.remove('hidden');
+
+            // Desktop nav styling
+            document.querySelectorAll('.nav-btn-desktop').forEach(btn => {
+                btn.classList.remove('bg-crimson-600', 'text-white', 'shadow-xs', 'font-semibold');
+                btn.classList.add('text-stone-600', 'font-medium', 'hover:bg-alabaster');
+            });
+            const activeDesktop = document.getElementById(`nav-desktop-${tabName}`);
+            if (activeDesktop) {
+                activeDesktop.classList.add('bg-crimson-600', 'text-white', 'shadow-xs', 'font-semibold');
+                activeDesktop.classList.remove('text-stone-600', 'font-medium', 'hover:bg-alabaster');
+            }
+
+            // Mobile nav styling
+            document.querySelectorAll('.nav-btn-mobile').forEach(btn => {
+                btn.classList.remove('text-crimson-600', 'font-semibold');
+                btn.classList.add('text-stone-500', 'font-medium');
+            });
+            const activeMobile = document.getElementById(`nav-mobile-${tabName}`);
+            if (activeMobile) {
+                activeMobile.classList.add('text-crimson-600', 'font-semibold');
+                activeMobile.classList.remove('text-stone-500', 'font-medium');
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ==========================================
+        // 4. LOGIKA PENCATATAN & DASHBOARD VISUAL
+        // ==========================================
+        function setTargetMode(mode) {
+            appState.settings.targetMode = mode;
+            saveSettings();
+            renderAll();
+        }
+
+        function renderModeUI() {
+            const isWeekly = appState.settings.targetMode === 'weekly';
+            const btnWeekly = document.getElementById('mode-weekly');
+            const btnDaily = document.getElementById('mode-daily');
+
+            if (isWeekly) {
+                btnWeekly.className = 'px-3.5 py-2 rounded-xl text-xs font-semibold transition bg-white text-stone-900 shadow-2xs border border-sand/60';
+                btnDaily.className = 'px-3.5 py-2 rounded-xl text-xs font-medium text-stone-500 hover:text-stone-800 transition';
+            } else {
+                btnDaily.className = 'px-3.5 py-2 rounded-xl text-xs font-semibold transition bg-white text-stone-900 shadow-2xs border border-sand/60';
+                btnWeekly.className = 'px-3.5 py-2 rounded-xl text-xs font-medium text-stone-500 hover:text-stone-800 transition';
+            }
+        }
+
+        function handleLogTTD(event) {
+            const dateInput = document.getElementById('log-date').value || getTodayStr();
+            const timeInput = document.getElementById('log-time').value || getCurrentTimeStr();
+            const noteInput = document.getElementById('log-note').value.trim();
+
+            const existingIndex = appState.logs.findIndex(item => item.date === dateInput);
+            
+            if (existingIndex !== -1) {
+                appState.logs[existingIndex].time = timeInput;
+                if (noteInput) appState.logs[existingIndex].note = noteInput;
+                showToast(`Catatan ${formatIndoDate(dateInput)} diperbarui!`, 'success');
+            } else {
+                appState.logs.unshift({
+                    id: Date.now().toString(),
+                    date: dateInput,
+                    time: timeInput,
+                    note: noteInput || 'Diminum sesuai jadwal'
+                });
+                appState.logs.sort((a, b) => b.date.localeCompare(a.date));
+                triggerCelebrationBurst(event);
+                showToast('Luar biasa! Catatan minum TTD tersimpan.', 'success');
+            }
+
+            document.getElementById('log-note').value = '';
+            saveLogs();
+            renderAll();
+        }
+
+        // Toggle langsung dari kapsul 7 hari terakhir
+        function toggleDateQuickly(dateStr, event) {
+            const existingIndex = appState.logs.findIndex(item => item.date === dateStr);
+            if (existingIndex !== -1) {
+                appState.logs.splice(existingIndex, 1);
+                showToast(`Catatan tanggal ${formatIndoDate(dateStr)} dihapus.`, 'info');
+            } else {
+                appState.logs.unshift({
+                    id: Date.now().toString(),
+                    date: dateStr,
+                    time: getCurrentTimeStr(),
+                    note: 'Dicatat via pelacak 7 hari'
+                });
+                appState.logs.sort((a, b) => b.date.localeCompare(a.date));
+                triggerCelebrationBurst(event);
+                showToast(`Tercatat minum TTD pada ${formatIndoDate(dateStr)}!`, 'success');
+            }
+            saveLogs();
+            renderAll();
+        }
+
+        function openConfirmModal(title, desc, callback) {
+            document.getElementById('confirm-modal-title').textContent = title;
+            document.getElementById('confirm-modal-desc').textContent = desc;
+            confirmActionCallback = callback;
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeConfirmModal() {
+            confirmActionCallback = null;
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        document.getElementById('confirm-modal-action-btn').addEventListener('click', () => {
+            if (confirmActionCallback) confirmActionCallback();
+            closeConfirmModal();
+        });
+
+        function promptDeleteLog(id) {
+            openConfirmModal(
+                'Hapus Catatan?',
+                'Catatan konsumsi TTD pada tanggal ini akan dihapus dari riwayat Anda.',
+                () => {
+                    appState.logs = appState.logs.filter(log => log.id !== id);
+                    saveLogs();
+                    renderAll();
+                    showToast('Catatan berhasil dihapus.', 'info');
+                }
+            );
+        }
+
+        function promptResetDemoData() {
+            openConfirmModal(
+                'Kosongkan Semua Riwayat?',
+                'Seluruh catatan konsumsi TTD saat ini akan dihapus agar Anda bisa mulai mencatat dari nol.',
+                () => {
+                    appState.logs = [];
+                    saveLogs();
+                    renderAll();
+                    showToast('Seluruh riwayat telah dikosongkan.', 'info');
+                }
+            );
+        }
+
+        function calculateStreak() {
+            if (appState.logs.length === 0) return 0;
+            const uniqueDates = [...new Set(appState.logs.map(l => l.date))].sort((a, b) => b.localeCompare(a));
+            
+            if (appState.settings.targetMode === 'daily') {
+                let streak = 0;
+                let checkDate = new Date();
+                if (!uniqueDates.includes(getTodayStr())) {
+                    checkDate.setDate(checkDate.getDate() - 1);
+                }
+                while (true) {
+                    const str = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, '0')}-${String(checkDate.getDate()).padStart(2, '0')}`;
+                    if (uniqueDates.includes(str)) {
+                        streak++;
+                        checkDate.setDate(checkDate.getDate() - 1);
+                    } else break;
+                }
+                return streak;
+            } else {
+                const getWeekKey = (dateStr) => {
+                    const [y, m, d] = dateStr.split('-').map(Number);
+                    const date = new Date(y, m - 1, d);
+                    const day = date.getDay();
+                    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+                    const monday = new Date(date.setDate(diff));
+                    return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+                };
+
+                const loggedWeeks = new Set(uniqueDates.map(getWeekKey));
+                let streak = 0;
+                let currentRef = new Date();
+                let currentWeekKey = getWeekKey(getTodayStr());
+
+                if (!loggedWeeks.has(currentWeekKey)) {
+                    currentRef.setDate(currentRef.getDate() - 7);
+                    currentWeekKey = getWeekKey(`${currentRef.getFullYear()}-${String(currentRef.getMonth() + 1).padStart(2, '0')}-${String(currentRef.getDate()).padStart(2, '0')}`);
+                }
+                while (loggedWeeks.has(currentWeekKey)) {
+                    streak++;
+                    currentRef.setDate(currentRef.getDate() - 7);
+                    currentWeekKey = getWeekKey(`${currentRef.getFullYear()}-${String(currentRef.getMonth() + 1).padStart(2, '0')}-${String(currentRef.getDate()).padStart(2, '0')}`);
+                }
+                return streak;
+            }
+        }
+
+        function renderStatsAndRing() {
+            const todayStr = getTodayStr();
+            const currentMonthPrefix = todayStr.slice(0, 7);
+            const isWeekly = appState.settings.targetMode === 'weekly';
+
+            const monthLogs = appState.logs.filter(log => log.date.startsWith(currentMonthPrefix));
+            const uniqueMonthDays = new Set(monthLogs.map(l => l.date)).size;
+
+            const now = new Date();
+            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            const targetCount = isWeekly ? 4 : daysInMonth;
+            const percentage = Math.min(100, Math.round((uniqueMonthDays / targetCount) * 100));
+
+            // Update SVG Circular Progress Ring (Circumference = 2 * PI * 40 = 251.2)
+            const circumference = 251.2;
+            const offset = circumference - (percentage / 100) * circumference;
+            const ringCircle = document.getElementById('progress-ring-circle');
+            ringCircle.style.strokeDashoffset = offset;
+
+            document.getElementById('ring-percent-text').textContent = `${percentage}%`;
+            document.getElementById('stat-month-count').textContent = uniqueMonthDays;
+            document.getElementById('stat-month-target').textContent = targetCount;
+            document.getElementById('stat-month-desc').textContent = isWeekly 
+                ? 'Target rutin 1x seminggu' 
+                : `Target harian (${daysInMonth} hari)`;
+
+            // Streak & Compliance
+            const streak = calculateStreak();
+            document.getElementById('stat-streak-count').textContent = streak;
+            document.getElementById('stat-streak-unit').textContent = isWeekly ? 'minggu' : 'hari';
+            
+            const complianceBadge = document.getElementById('compliance-badge');
+            if (percentage >= 75) {
+                complianceBadge.textContent = 'Optimal ✨';
+                complianceBadge.className = 'font-bold text-sage-600';
+            } else if (percentage >= 40) {
+                complianceBadge.textContent = 'Cukup Baik 👍';
+                complianceBadge.className = 'font-bold text-amber-600';
+            } else {
+                complianceBadge.textContent = 'Perlu Rutin 💪';
+                complianceBadge.className = 'font-bold text-crimson-600';
+            }
+
+            // Hero Status Update
+            const todayLog = appState.logs.find(l => l.date === todayStr);
+            const heroPill = document.getElementById('hero-status-pill');
+            const heroHeadline = document.getElementById('hero-headline');
+            const btnLog = document.getElementById('btn-log-ttd');
+
+            if (todayLog) {
+                heroPill.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-sage-50 text-sage-700 border border-sage-200';
+                heroPill.innerHTML = `<i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-sage-600"></i> Tercatat Hari Ini (${todayLog.time})`;
+                heroHeadline.textContent = 'Hebat! Kadar Zat Besi & Energi Tubuhmu Terjaga 🌟';
+                btnLog.innerHTML = `<i data-lucide="edit-3" class="w-4 h-4"></i><span>Perbarui Catatan Hari Ini</span>`;
+                btnLog.classList.replace('bg-crimson-600', 'bg-sage-600');
+                btnLog.classList.replace('hover:bg-crimson-700', 'hover:bg-sage-700');
+            } else {
+                heroPill.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/70';
+                heroPill.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Belum Dicatat Hari Ini`;
+                heroHeadline.textContent = 'Jaga Kadar Hemoglobin & Energi Tubuhmu Hari Ini';
+                btnLog.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4"></i><span>Catat Minum TTD Sekarang</span>`;
+                btnLog.classList.replace('bg-sage-600', 'bg-crimson-600');
+                btnLog.classList.replace('hover:bg-sage-700', 'hover:bg-crimson-700');
+            }
+        }
+
+        // Grafik Batang 4 Minggu Terakhir
+        function renderFourWeekChart() {
+            const chartEl = document.getElementById('four-week-chart');
+            chartEl.innerHTML = '';
+
+            const isWeekly = appState.settings.targetMode === 'weekly';
+            const maxBarTarget = isWeekly ? 1 : 7; // Target 1 tablet/minggu atau 7 tablet/minggu
+            const uniqueDates = [...new Set(appState.logs.map(l => l.date))];
+
+            // Hitung jumlah log untuk 4 blok minggu terakhir (Minggu -3, -2, -1, Minggu Ini)
+            const weeksData = [];
+            for (let w = 3; w >= 0; w--) {
+                const startOffset = -(w * 7 + 6);
+                const endOffset = -(w * 7);
+                let count = 0;
+
+                for (let d = startOffset; d <= endOffset; d++) {
+                    const checkStr = getOffsetDateStr(d);
+                    if (uniqueDates.includes(checkStr)) count++;
+                }
+
+                weeksData.push({
+                    label: w === 0 ? 'Minggu Ini' : `${w} Mgg Lalu`,
+                    count: count
+                });
+            }
+
+            weeksData.forEach((item, idx) => {
+                const ratio = Math.min(1, item.count / maxBarTarget);
+                const heightPercent = item.count === 0 ? 12 : Math.max(24, Math.round(ratio * 100));
+                const isCurrent = idx === 3;
+                const barColor = item.count >= maxBarTarget 
+                    ? 'bg-sage-600' 
+                    : (item.count > 0 ? 'bg-crimson-500' : 'bg-sand');
+
+                const col = document.createElement('div');
+                col.className = 'flex flex-col items-center justify-end h-full gap-1.5';
+                col.innerHTML = `
+                    <span class="text-[11px] font-display font-bold ${item.count > 0 ? 'text-stone-800' : 'text-stone-400'}">${item.count}</span>
+                    <div class="w-full max-w-[36px] bg-alabaster rounded-xl h-14 flex items-end overflow-hidden p-0.5 border border-sand/60">
+                        <div class="w-full rounded-lg transition-all duration-500 ${barColor}" style="height: ${heightPercent}%"></div>
+                    </div>
+                    <span class="text-[10px] font-medium ${isCurrent ? 'text-crimson-600 font-bold' : 'text-stone-400'} truncate w-full text-center">${item.label}</span>
+                `;
+                chartEl.appendChild(col);
+            });
+        }
+
+        function renderWeeklyCalendar() {
+            const container = document.getElementById('weekly-calendar-grid');
+            container.innerHTML = '';
+
+            const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+            const loggedDates = new Set(appState.logs.map(l => l.date));
+            const todayStr = getTodayStr();
+
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const dateStr = getOffsetDateStr(-i);
+                const isDone = loggedDates.has(dateStr);
+                const isToday = dateStr === todayStr;
+
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.onclick = (e) => toggleDateQuickly(dateStr, e);
+                btn.title = isDone ? 'Ketuk untuk membatalkan catatan' : 'Ketuk untuk menandai sudah minum';
+                btn.className = `flex flex-col items-center py-2 px-1 rounded-2xl border transition active:scale-95 cursor-pointer ${
+                    isToday 
+                        ? 'border-crimson-300 bg-crimson-50/50' 
+                        : 'border-transparent hover:bg-alabaster'
+                }`;
+
+                btn.innerHTML = `
+                    <span class="text-[11px] font-medium ${isToday ? 'text-crimson-700 font-bold' : 'text-stone-400'} mb-1.5">
+                        ${dayNames[d.getDay()]}
+                    </span>
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-display font-bold transition ${
+                        isDone 
+                            ? 'bg-sage-600 text-white shadow-2xs' 
+                            : 'bg-alabaster text-stone-600 border border-sand'
+                    }">
+                        ${isDone ? '<i data-lucide="check" class="w-4 h-4"></i>' : d.getDate()}
+                    </div>
+                `;
+                container.appendChild(btn);
+            }
+        }
+
+        function escapeHTML(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function renderHistoryList() {
+            const listEl = document.getElementById('history-list');
+            const countEl = document.getElementById('total-history-count');
+            countEl.textContent = `${appState.logs.length} catatan`;
+
+            if (appState.logs.length === 0) {
+                listEl.innerHTML = `
+                    <div class="text-center py-10 px-4 bg-alabaster rounded-2xl border border-dashed border-sand">
+                        <div class="w-11 h-11 bg-white text-stone-400 rounded-2xl border border-sand flex items-center justify-center mx-auto mb-2.5">
+                            <i data-lucide="clipboard-list" class="w-5 h-5"></i>
+                        </div>
+                        <p class="text-sm font-bold text-stone-700">Belum ada riwayat konsumsi</p>
+                        <p class="text-xs text-stone-400 mt-0.5">Klik tombol "Catat Minum TTD Sekarang" untuk memulai.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            listEl.innerHTML = appState.logs.map(log => `
+                <div class="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-alabaster/80 hover:bg-alabaster border border-sand/80 transition group">
+                    <div class="flex items-start gap-3 min-w-0">
+                        <div class="w-9 h-9 rounded-xl bg-sage-100 text-sage-700 flex items-center justify-center shrink-0 mt-0.5">
+                            <i data-lucide="check" class="w-4 h-4"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="text-sm font-bold text-stone-800">${formatIndoDate(log.date)}</span>
+                                <span class="text-[11px] font-medium px-2 py-0.5 rounded-md bg-white border border-sand text-stone-500">
+                                    ${log.time}
+                                </span>
+                            </div>
+                            <p class="text-xs text-stone-500 truncate mt-0.5">${escapeHTML(log.note)}</p>
+                        </div>
+                    </div>
+                    <button onclick="promptDeleteLog('${log.id}')" title="Hapus catatan" 
+                        class="p-2 text-stone-400 hover:text-crimson-600 hover:bg-crimson-50 rounded-xl transition shrink-0">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // ==========================================
+        // 5. PENGINGAT PINTAR & COUNTDOWN WIDGET
+        // ==========================================
+        function renderReminderUI() {
+            const isEnabled = appState.settings.reminderEnabled;
+            const toggleMain = document.getElementById('reminder-toggle');
+            const toggleDash = document.getElementById('dashboard-reminder-toggle');
+            const label = document.getElementById('reminder-status-label');
+            const timeInput = document.getElementById('reminder-time-input');
+            const dayContainer = document.getElementById('reminder-day-container');
+            const badgeDesktop = document.getElementById('reminder-badge-desktop');
+            const badgeMobile = document.getElementById('reminder-badge-mobile');
+
+            toggleMain.checked = isEnabled;
+            toggleDash.checked = isEnabled;
+            label.textContent = isEnabled ? 'Aktif' : 'Nonaktif';
+            label.className = isEnabled 
+                ? 'ms-3 text-sm font-bold text-sage-600' 
+                : 'ms-3 text-sm font-semibold text-stone-500';
+
+            timeInput.value = appState.settings.reminderTime;
+
+            if (isEnabled) {
+                badgeDesktop.classList.remove('hidden');
+                badgeMobile.classList.remove('hidden');
+            } else {
+                badgeDesktop.classList.add('hidden');
+                badgeMobile.classList.add('hidden');
+            }
+
+            if (appState.settings.targetMode === 'daily') {
+                dayContainer.classList.add('opacity-45', 'pointer-events-none');
+            } else {
+                dayContainer.classList.remove('opacity-45', 'pointer-events-none');
+            }
+
+            document.querySelectorAll('.day-btn').forEach(btn => {
+                const dayVal = Number(btn.getAttribute('data-day'));
+                if (dayVal === appState.settings.reminderDay) {
+                    btn.className = 'day-btn py-2.5 rounded-xl text-xs font-bold border border-crimson-600 bg-crimson-600 text-white shadow-2xs transition';
+                } else {
+                    btn.className = 'day-btn py-2.5 rounded-xl text-xs font-semibold border border-sand text-stone-600 hover:bg-alabaster transition';
+                }
+            });
+
+            updateDashboardReminderWidget();
+            updateNotificationPermissionBadge();
+        }
+
+        function updateDashboardReminderWidget() {
+            const schedEl = document.getElementById('next-reminder-schedule');
+            const countEl = document.getElementById('next-reminder-countdown');
+            const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const isWeekly = appState.settings.targetMode === 'weekly';
+
+            if (!appState.settings.reminderEnabled) {
+                schedEl.textContent = 'Pengingat Nonaktif';
+                countEl.textContent = 'Aktifkan sakelar untuk menyalakan alarm';
+                countEl.className = 'text-xs font-medium text-stone-400 mt-0.5';
+                return;
+            }
+
+            const timeStr = appState.settings.reminderTime;
+            schedEl.textContent = isWeekly 
+                ? `Setiap ${dayNames[appState.settings.reminderDay]}, ${timeStr}` 
+                : `Setiap Hari, ${timeStr}`;
+
+            // Hitung waktu menuju jadwal terdekat
+            const now = new Date();
+            const [targetH, targetM] = timeStr.split(':').map(Number);
+            let nextDate = new Date();
+            nextDate.setHours(targetH, targetM, 0, 0);
+
+            if (isWeekly) {
+                const currentDay = now.getDay();
+                let diffDays = (appState.settings.reminderDay - currentDay + 7) % 7;
+                if (diffDays === 0 && nextDate <= now) {
+                    diffDays = 7;
+                }
+                nextDate.setDate(now.getDate() + diffDays);
+            } else {
+                if (nextDate <= now) {
+                    nextDate.setDate(now.getDate() + 1);
+                }
+            }
+
+            const diffMs = nextDate - now;
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+            if (diffHours >= 24) {
+                const daysLeft = Math.floor(diffHours / 24);
+                countEl.textContent = `Dalam ${daysLeft} hari ${diffHours % 24} jam lagi`;
+            } else if (diffHours > 0) {
+                countEl.textContent = `Dalam ${diffHours} jam ${diffMins} menit lagi`;
+            } else {
+                countEl.textContent = `Segera dalam ${Math.max(1, diffMins)} menit lagi!`;
+            }
+            countEl.className = 'text-xs font-semibold text-crimson-600 mt-0.5';
+        }
+
+        function toggleReminderFromDashboard() {
+            const isChecked = document.getElementById('dashboard-reminder-toggle').checked;
+            appState.settings.reminderEnabled = isChecked;
+            saveSettings();
+            renderReminderUI();
+            showToast(isChecked ? 'Pengingat diaktifkan!' : 'Pengingat dinonaktifkan.', isChecked ? 'success' : 'info');
+        }
+
+        function toggleReminderSetting() {
+            const isChecked = document.getElementById('reminder-toggle').checked;
+            appState.settings.reminderEnabled = isChecked;
+            saveSettings();
+            renderReminderUI();
+
+            if (isChecked) {
+                showToast('Pengingat HemoCare diaktifkan!', 'success');
+                if ('Notification' in window && Notification.permission === 'default') {
+                    requestNotificationPermission();
+                }
+            } else {
+                showToast('Pengingat dinonaktifkan.', 'info');
+            }
+        }
+
+        function selectReminderDay(dayIndex) {
+            appState.settings.reminderDay = dayIndex;
+            saveSettings();
+            renderReminderUI();
+        }
+
+        function saveReminderSettings(showFeedback = false) {
+            const timeVal = document.getElementById('reminder-time-input').value;
+            if (timeVal) {
+                appState.settings.reminderTime = timeVal;
+                saveSettings();
+                renderReminderUI();
+                if (showFeedback) {
+                    showToast(`Jadwal pengingat disimpan pukul ${timeVal}.`, 'success');
+                }
+            }
+        }
+
+        function updateNotificationPermissionBadge() {
+            const badge = document.getElementById('notif-permission-badge');
+            const btn = document.getElementById('btn-req-notif');
+
+            if (!('Notification' in window)) {
+                badge.textContent = 'Tidak Didukung';
+                btn.classList.add('hidden');
+                return;
+            }
+
+            if (Notification.permission === 'granted') {
+                badge.textContent = 'Diizinkan';
+                badge.className = 'text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-sage-100 text-sage-700';
+                btn.classList.add('hidden');
+            } else if (Notification.permission === 'denied') {
+                badge.textContent = 'Diblokir';
+                badge.className = 'text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-crimson-100 text-crimson-700';
+                btn.classList.add('hidden');
+            } else {
+                badge.textContent = 'Belum Diizinkan';
+                badge.className = 'text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-700';
+                btn.classList.remove('hidden');
+            }
+        }
+
+        function requestNotificationPermission() {
+            if (!('Notification' in window)) return;
+            Notification.requestPermission().then(permission => {
+                updateNotificationPermissionBadge();
+                if (permission === 'granted') {
+                    showToast('Izin notifikasi aktif!', 'success');
+                }
+            });
+        }
+
+        // Suara chime lembut menggunakan Web Audio API
+        function playGentleChime() {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = new AudioCtx();
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.16);
+                    gain.gain.setValueAtTime(0.001, ctx.currentTime + idx * 0.16);
+                    gain.gain.exponentialRampToValueAtTime(0.14, ctx.currentTime + idx * 0.16 + 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + idx * 0.16 + 0.65);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(ctx.currentTime + idx * 0.16);
+                    osc.stop(ctx.currentTime + idx * 0.16 + 0.7);
+                });
+            } catch (e) {
+                console.warn('Audio tidak dapat diputar:', e);
+            }
+        }
+
+        function triggerReminderAlert() {
+            playGentleChime();
+            const modal = document.getElementById('reminder-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('HemoCare — Waktunya Minum TTD! 💊', {
+                    body: 'Jangan lupa minum 1 Tablet Tambah Darah hari ini setelah makan.'
+                });
+            }
+        }
+
+        function testReminderAlert() {
+            triggerReminderAlert();
+        }
+
+        function closeReminderModal() {
+            const modal = document.getElementById('reminder-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function quickLogFromReminder() {
+            closeReminderModal();
+            document.getElementById('log-date').value = getTodayStr();
+            document.getElementById('log-time').value = getCurrentTimeStr();
+            handleLogTTD();
+            switchTab('dashboard');
+        }
+
+        // Cek alarm tiap 15 detik & perbarui countdown tiap menit
+        setInterval(() => {
+            updateDashboardReminderWidget();
+            if (!appState.settings.reminderEnabled) return;
+
+            const now = new Date();
+            const todayStr = getTodayStr();
+            const currentTime = getCurrentTimeStr();
+            const alreadyLoggedToday = appState.logs.some(l => l.date === todayStr);
+            
+            if (alreadyLoggedToday || appState.settings.lastNotifiedDate === todayStr) return;
+
+            const isDaily = appState.settings.targetMode === 'daily';
+            const isScheduledDay = isDaily || (now.getDay() === appState.settings.reminderDay);
+
+            if (isScheduledDay && currentTime === appState.settings.reminderTime) {
+                appState.settings.lastNotifiedDate = todayStr;
+                saveSettings();
+                triggerReminderAlert();
+            }
+        }, 15000);
+
+        // ==========================================
+        // 6. SELF-CHECK GEJALA ANEMIA (EDUKASI)
+        // ==========================================
+        function evaluateSymptoms() {
+            const checkedCount = document.querySelectorAll('.symptom-cb:checked').length;
+            const resultBox = document.getElementById('symptom-result-box');
+
+            if (checkedCount === 0) {
+                resultBox.className = 'p-4 rounded-xl bg-white border border-sand text-xs sm:text-sm text-stone-600 leading-relaxed';
+                resultBox.innerHTML = 'Pilih salah satu atau beberapa gejala di atas untuk melihat rekomendasi kesehatan Anda.';
+            } else if (checkedCount <= 2) {
+                resultBox.className = 'p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs sm:text-sm text-amber-900 leading-relaxed';
+                resultBox.innerHTML = `<strong>Terdeteksi ${checkedCount} tanda ringan:</strong> Tubuh Anda mungkin mulai membutuhkan asupan zat besi tambahan. Pastikan rutin minum Tablet Tambah Darah sesuai jadwal serta perbanyak konsumsi makanan kaya zat besi dan Vitamin C.`;
+            } else {
+                resultBox.className = 'p-4 rounded-xl bg-crimson-50 border border-crimson-200 text-xs sm:text-sm text-crimson-900 leading-relaxed';
+                resultBox.innerHTML = `<strong>Terdeteksi ${checkedCount} tanda yang mengarah pada risiko anemia:</strong> Sangat disarankan untuk segera memeriksakan kadar <strong>Hemoglobin (Hb)</strong> di Puskesmas atau fasilitas kesehatan terdekat agar mendapat penanganan yang tepat.`;
+            }
+        }
+
+        // ==========================================
+        // 7. TOAST NOTIFICATION & INISIALISASI
+        // ==========================================
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const styles = {
+                success: 'bg-stone-900 text-white border-stone-800',
+                error: 'bg-crimson-600 text-white border-crimson-700',
+                info: 'bg-white text-stone-800 border-sand shadow-lg'
+            };
+
+            const icons = {
+                success: '<i data-lucide="check-circle-2" class="w-4 h-4 text-sage-400 shrink-0"></i>',
+                error: '<i data-lucide="alert-circle" class="w-4 h-4 text-white shrink-0"></i>',
+                info: '<i data-lucide="info" class="w-4 h-4 text-crimson-600 shrink-0"></i>'
+            };
+
+            toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-2xl border shadow-md text-xs sm:text-sm font-medium transition-all duration-300 ${styles[type]}`;
+            toast.innerHTML = `${icons[type]}<span>${message}</span>`;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-8px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3200);
+        }
+
+        function renderAll() {
+            renderModeUI();
+            renderStatsAndRing();
+            renderFourWeekChart();
+            renderWeeklyCalendar();
+            renderHistoryList();
+            renderReminderUI();
+            lucide.createIcons();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            updateDynamicGreeting();
+            
+            const todayStr = getTodayStr();
+            document.getElementById('header-date').textContent = formatIndoDate(todayStr);
+            document.getElementById('log-date').value = todayStr;
+            document.getElementById('log-date').max = todayStr;
+            document.getElementById('log-time').value = getCurrentTimeStr();
+
+            renderAll();
+        });
+    </script>
+</body>
+</html>
